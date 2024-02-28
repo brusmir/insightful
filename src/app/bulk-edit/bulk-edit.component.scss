@@ -1,0 +1,40 @@
+.actions-buttons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bulk-edit-container {
+  height: 300px;
+  overflow: auto;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+table {
+  width: 100%;
+}
+
+.form-row-style {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-column-style {
+  width: 40%;
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+h3:not(:first-of-type) {
+  margin-top: 1rem;
+}
+
+.bulk-edit-picker {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bulk-edit-hidden-piker {
+  display: none;
+}
