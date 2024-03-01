@@ -30,7 +30,6 @@ export class EmployeesTableComponent {
   length = 10000;
 
   ngAfterViewInit(): void {
-    this.dataSource = new MatTableDataSource(this.employees);
     this.dataSource.sort = this.sort;
   }
 
@@ -65,10 +64,8 @@ export class EmployeesTableComponent {
   }
 
   onPageChange(event: PageEvent) {
-    if ((event.previousPageIndex  && event.previousPageIndex < event.pageIndex) || (event.previousPageIndex === 0)) {
-      this.isLoadingEmployees = true;
-      this.pageChange.emit(event);
-    }
+    this.isLoadingEmployees = true;
+    this.pageChange.emit(event);
   }
 
   onEditBulk() {

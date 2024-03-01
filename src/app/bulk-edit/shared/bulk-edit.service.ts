@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Employee } from '../../shared/models/employee.model';
 import { ShiftsService } from '../../shared/services/shifts.service';
-import { Observable, forkJoin, map } from 'rxjs';
+import { EMPTY, Observable, forkJoin, map } from 'rxjs';
 import dayjs from 'dayjs';
+import { Shift } from '../../shared/models/shift.model';
+import { EmployeesService } from '../../shared/services/employees.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +13,13 @@ import dayjs from 'dayjs';
 export class BulkEditService {
   fb = inject(FormBuilder);
   shiftsService = inject(ShiftsService);
-  form!: FormGroup;
+  employeesService = inject(EmployeesService);
+  employeeForm!: FormGroup;
+  employeesToSave: Employee[] = [];
+  shiftsToSave: Shift[] = [];
 
   createFormGroup(data: Employee[]): void {
-    this.form = this.fb.group({
+    this.employeeForm = this.fb.group({
       employees: this.fb.array([])
     });
 
@@ -28,13 +33,20 @@ export class BulkEditService {
             (employeeShifts as FormArray).push(this.fb.group({
               clockIn: [shift.clockIn, Validators.required],
               clockOut: [shift.clockOut, Validators.required],
-              sum: [shift.clockIn + shift.clockOut, Validators.required]
+              formattedClockIn: [dayjs(shift.clockIn).format('HH:mm'), Validators.required],
+              formattedClockOut: [dayjs(shift.clockOut).format('HH:mm'), Validators.required],
+              sum: [{value: dayjs(shift.clockOut - shift.clockIn).format('HH:mm'), disabled: true},Validators.required],
+              id: [shift.id],
+              employeeId: [employee.id]
             }));
           });
           return this.fb.group({
             name: [employee.name, Validators.required],
+            email: [employee.email, Validators.required],
             hourlyRate: [employee.hourlyRate, Validators.required],
             hourlyRateOvertime: [employee.hourlyRateOvertime, Validators.required],
+            id: [employee.id],
+            selectedDate: [null],
             shifts: employeeShifts
           });
         })
@@ -42,14 +54,142 @@ export class BulkEditService {
       requests.push(request);
     });
 
-    forkJoin(requests).subscribe((aliases: any[]) => {
-      aliases.forEach(alias => {
-        (this.form.get('employees') as FormArray).push(alias);
+    forkJoin(requests).subscribe((employees: any[]) => {
+      employees.forEach(employee => {
+        (this.employeeForm.get('employees') as FormArray).push(employee);
       });
     });
   }
 
-  get aliases() {
-    return this.form.get('employees') as FormArray;
+  calculateSumColumn(employeeId: number, shiftId: number): void {
+    const shifts = this.employees.at(employeeId).get('shifts') as FormArray;
+    const shift = shifts.at(shiftId);
+
+    // Splitting the clockIn and clockOut time strings to get hours and minutes
+    const [clockInHours, clockInMinutes] = shift.get('formattedClockIn')?.value.split(':').map(Number);
+    const [clockOutHours, clockOutMinutes] = shift.get('formattedClockOut')?.value.split(':').map(Number);
+
+    // Creating Day.js objects for clockIn and clockOut times
+    const clockInTime = dayjs().hour(clockInHours).minute(clockInMinutes);
+    const clockOutTime = dayjs().hour(clockOutHours).minute(clockOutMinutes);
+
+    // Calculating the difference in minutes
+    const differenceInMinutes = clockOutTime.diff(clockInTime, 'minute');
+
+    // Calculating the hours and minutes for the difference
+    const hours = Math.floor(differenceInMinutes / 60);
+    const minutes = differenceInMinutes % 60;
+    // Formatting the result into "HH:mm" format
+    const sum = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+    shift.patchValue({sum})
+  }
+
+  calculateTotalMinutes(timeString: string): number {
+    // Splitting the time string to get hours and minutes
+    const [hours, minutes] = timeString.split(':').map(Number);
+
+    // Creating a Day.js object with the given time
+    const timeObject = dayjs().hour(hours).minute(minutes);
+
+    // Calculating the total minutes
+    const totalMinutes = hours * 60 + minutes;
+
+    return totalMinutes;
+  }
+
+  get employees() {
+    return this.employeeForm.get('employees') as FormArray;
+  }
+
+  findChangedControls(control: AbstractControl) {
+    if (control instanceof FormGroup) {
+      Object.keys(control.controls).forEach(key => {
+        const nestedControl = control.get(key);
+        if (nestedControl) {
+          this.findChangedControls(nestedControl);
+        }
+      });
+    } else if (control instanceof FormArray) {
+      control.controls.forEach(nestedControl => {
+        this.findChangedControls(nestedControl);
+      });
+    } else if (control.dirty) {
+      const parent = this.findParent(control, this.employeeForm);
+      if (parent) {
+        this.sortItemForSave(parent.value);
+      }
+    }
+  }
+
+  findParent(control: AbstractControl, formGroup: FormGroup | FormArray): FormGroup | FormArray | null {
+    for (const key in formGroup.controls) {
+      const formControl = formGroup.get(key);
+      if (formControl === control) {
+        return formGroup;
+      } else if (formControl instanceof FormGroup) {
+        const parent = this.findParent(control, formControl);
+        if (parent) return parent;
+      } else if (formControl instanceof FormArray) {
+        for (let i = 0; i < formControl.length; i++) {
+          const parent = this.findParent(control, formControl.at(i) as FormGroup);
+          if (parent) return parent;
+        }
+      }
+    }
+    return null;
+  }
+
+  sortItemForSave(item: any): void {
+    if (item.shifts) {
+      delete item.shifts;
+      delete item.selectedDate;
+      this.employeesToSave.push(item);
+    } else {
+      this.shiftsToSave.push(this.updateShift(item));
+    }
+  }
+
+  updateShift(item: any) {
+    console.log(item);
+    const [clockInHours, clockInMinutes] = item.formattedClockIn.split(':').map(Number);
+    const [clockOutHours, clockOutMinutes] = item.formattedClockOut.split(':').map(Number);
+
+    dayjs(item.clockIn).hour(clockInHours).minute(clockInMinutes);
+    dayjs(item.clockOut).hour(clockOutHours).minute(clockOutMinutes);
+
+    delete item.formattedClockIn;
+    delete item.formattedClockOut;
+
+    return item;
+  }
+
+  saveEmployeesAndShifts(): Observable<any> {
+    this.findChangedControls(this.employeeForm);
+
+    const saveRequests = [];
+    console.log(this.shiftsToSave);
+    if (this.employeesToSave.length) {
+      // Save employees
+      for (const employee of this.employeesToSave) {
+        const request = this.employeesService.saveEmployee(employee);
+        saveRequests.push(request);
+      }
+    }
+
+    if (this.shiftsToSave.length) {
+      // Save shifts
+      for (const shift of this.shiftsToSave) {
+        const request = this.shiftsService.saveShift(shift);
+        saveRequests.push(request);
+      }
+    }
+
+    if (saveRequests.length) {
+      // Wait for all requests to complete
+      return forkJoin(saveRequests);
+    } else {
+      return EMPTY;
+    }
   }
 }

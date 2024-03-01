@@ -1,6 +1,4 @@
-
-import { Employee } from './../shared/models/employee.model';
-import { Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -10,16 +8,18 @@ import {
   MatDialogActions,
   MatDialogClose,
 } from '@angular/material/dialog';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FormArray } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { BulkEditService } from './shared/bulk-edit.service';
-import { MatDatepickerInputEvent, MatDatepickerModule } from '@angular/material/datepicker';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { DatePipe } from '@angular/common';
+import { FilterByDatePipe } from '../shared/filter-by-date.pipe';
+import { Employee } from './../shared/models/employee.model';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-bulk-edit',
@@ -31,20 +31,22 @@ import { DatePipe } from '@angular/common';
     MatDialogClose,
     MatButtonModule,
     ReactiveFormsModule,
-    MatTableModule,
     MatInputModule,
     MatFormFieldModule,
     MatDividerModule,
     MatDatepickerModule,
-    DatePipe
+    DatePipe,
+    FilterByDatePipe,
+    MatProgressSpinnerModule
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './bulk-edit.component.html',
   styleUrl: './bulk-edit.component.scss'
 })
 export class BulkEditComponent {
-  form!: FormGroup;
-  aliases!: FormArray;
+  employeeForm!: FormGroup;
+  employees!: FormArray;
+  showSpinner = false;
 
   constructor(
     public dialogRef: MatDialogRef<BulkEditComponent>,
@@ -52,29 +54,29 @@ export class BulkEditComponent {
     private bulkEditService: BulkEditService
   ) {}
 
-  displayedColumns = ['shift', 'clockIn', 'clockOut', 'sum'];
-  dataSource = [];
-
   ngOnInit() {
     this.bulkEditService.createFormGroup(this.data.employees);
-    this.form = this.bulkEditService.form;
-    this.aliases = this.bulkEditService.aliases;
-    console.log(this.bulkEditService.form);
+    this.employeeForm = this.bulkEditService.employeeForm;
+    this.employees = this.bulkEditService.employees;
+    console.log(this.bulkEditService.employeeForm);
   }
 
-  filterShifts(event: MatDatepickerInputEvent<Date>) {
-    console.log(event);
+  sum(employeeId: number, shiftId: number) {
+    this.bulkEditService.calculateSumColumn(employeeId, shiftId);
   }
 
   trackByFn(index: number) {
     return index;
   }
 
-  onNoClick(): void {
+  onFormSubmit(): void {
+    if (!this.employeeForm.pristine) {
+      this.showSpinner = true;
+      this.bulkEditService.saveEmployeesAndShifts().subscribe(() => {
+        this.showSpinner = false;
+        this.dialogRef.close();
+      })
+    }
     this.dialogRef.close();
-  }
-
-  onClose() {
-
   }
 }

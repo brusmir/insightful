@@ -1,23 +1,72 @@
+// {
+//     "env": {
+//         "browser": true,
+//         "es2021": true
+//     },
+//     "extends": [
+//         "eslint:recommended",
+//         "plugin:@typescript-eslint/recommended",
+//         "plugin:prettier/recommended"
+//     ],
+//     "parser": "@typescript-eslint/parser",
+//     "parserOptions": {
+//         "ecmaVersion": "latest",
+//         "sourceType": "module"
+//     },
+//     "plugins": [
+//         "@typescript-eslint",
+//         "prettier"
+//     ],
+//     "rules": {
+//       "semi": ["error", "always"],
+//       "quotes": ["error", "double"]
+//     }
+// }
+
 {
-    "env": {
-        "browser": true,
-        "es2021": true
-    },
-    "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-        "ecmaVersion": "latest",
-        "sourceType": "module"
-    },
-    "plugins": [
-        "@typescript-eslint",
-        "prettier"
-    ],
-    "rules": {
-      "semi": ["error", "always"],
-      "quotes": ["error", "double"]
-    }
-}
+    "root": true,
+    "ignorePatterns": [],
+    "overrides": [
+      {
+        "files": ["*.ts"],
+        "parserOptions": {
+          "project": ["tsconfig.eslint.json"],
+          "createDefaultProgram": false
+        },
+        "extends": [
+          "plugin:@angular-eslint/recommended",
+          "plugin:@angular-eslint/template/process-inline-templates",
+          "plugin:prettier/recommended"
+        ],
+        "rules": {
+          "@angular-eslint/component-selector": [
+            "error",
+            {
+              "prefix": "app",
+              "style": "kebab-case",
+              "type": "element"
+            }
+          ],
+          "@angular-eslint/directive-selector": [
+            "error",
+            {
+              "prefix": "app",
+              "style": "camelCase",
+              "type": "attribute"
+            }
+          ],
+          "@angular-eslint/component-class-suffix": [
+            "warn",
+            {
+              "suffixes": ["Component", "Page"]
+            }
+          ]
+        }
+      },
+      {
+        "files": ["*.html"],
+        "extends": ["plugin:@angular-eslint/template/recommended"],
+        "rules": {}
+      }
+    ]
+  }

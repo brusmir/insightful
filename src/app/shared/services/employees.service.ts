@@ -13,13 +13,13 @@ import { PageData } from '../models/page-data.model';
 })
 export class EmployeesService {
   #http = inject(HttpClient);
-  #employeesUrl = 'http://localhost:3000/employees?'
+  #employeesUrl = 'http://localhost:3000/employees'
   #shiftService = inject(ShiftsService);
 
-  #pageSubject = new BehaviorSubject<PageData>({page: 0, limit: 10});
+  #pageSubject = new BehaviorSubject<PageData>({page: 0, limit: 5});
   pageAction$ = this.#pageSubject.asObservable();
   employees$ = this.pageAction$.pipe(
-    concatMap(({page, limit}) => this.#http.get<Employee[]>(`${this.#employeesUrl}_page=${page}&_limit=${limit}`).pipe(
+    concatMap(({page, limit}) => this.#http.get<Employee[]>(`${this.#employeesUrl}?_page=${page}&_limit=${limit}`).pipe(
       switchMap(employees => {
         const employeeObservables = employees.map(employee =>
           this.#shiftService.getShiftsById(employee.id).pipe(
@@ -85,22 +85,25 @@ export class EmployeesService {
     return { totalClockedInTime, totalRegularHours, totalOvertime };
   }
 
-
-#handleError(err: HttpErrorResponse): Observable<never> {
-  // in a real world app, we may send the server to some remote logging infrastructure
-  // instead of just logging it to the console
-  let errorMessage = '';
-  if (err.error instanceof ErrorEvent) {
-    // A client-side or network error occurred. Handle it accordingly.
-    errorMessage = `An error occurred: ${err.error.message}`;
-  } else {
-    // The backend returned an unsuccessful response code.
-    // The response body may contain clues as to what went wrong,
-    errorMessage = `Server returned code: ${err.status}, error message is: ${err.message
-      }`;
+  saveEmployee(employee: Employee) {
+    return this.#http.patch(`${this.#employeesUrl}/${employee.id}`, employee);
   }
-  console.error(errorMessage);
 
-  return EMPTY;
-}
+  #handleError(err: HttpErrorResponse): Observable<never> {
+    // in a real world app, we may send the server to some remote logging infrastructure
+    // instead of just logging it to the console
+    let errorMessage = '';
+    if (err.error instanceof ErrorEvent) {
+      // A client-side or network error occurred. Handle it accordingly.
+      errorMessage = `An error occurred: ${err.error.message}`;
+    } else {
+      // The backend returned an unsuccessful response code.
+      // The response body may contain clues as to what went wrong,
+      errorMessage = `Server returned code: ${err.status}, error message is: ${err.message
+        }`;
+    }
+    console.error(errorMessage);
+
+    return EMPTY;
+  }
 }

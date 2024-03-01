@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { EmployeesTableComponent } from '../employees-table/employees-table.component';
 import { EmployeesService } from '../shared/services/employees.service';
 import { PageEvent } from '@angular/material/paginator';
@@ -14,7 +14,8 @@ import { EmployeeSum } from '../shared/models/employee-sum.model';
   standalone: true,
   imports: [EmployeesTableComponent, AsyncPipe],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.scss'
+  styleUrl: './dashboard.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent {
   pageTitle = 'Dashboard';

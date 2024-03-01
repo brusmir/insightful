@@ -7,9 +7,14 @@ import { Shift } from '../models/shift.model';
 })
 export class ShiftsService {
   #http = inject(HttpClient);
-  #shiftsUrl = 'http://localhost:3000/shifts?'
+  #shiftsUrl = 'http://localhost:3000/shifts'
 
   getShiftsById(employeeId: string) {
-    return this.#http.get<Shift[]>(`${this.#shiftsUrl}employeeId=${employeeId}`);
+    return this.#http.get<Shift[]>(`${this.#shiftsUrl}?employeeId=${employeeId}`);
+  }
+
+  saveShift(shift: Shift) {
+    console.log('shift for save', shift);
+    return this.#http.patch(`${this.#shiftsUrl}/${shift.id}`, shift)
   }
 }

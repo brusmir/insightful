@@ -4,14 +4,47 @@
 }
 
 .bulk-edit-container {
-  height: 300px;
-  overflow: auto;
   margin-top: 1rem;
   margin-bottom: 2rem;
 }
 
+.bulk-edit-loading-shade {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 table {
   width: 100%;
+
+  tbody, thead {
+    display: flex;
+    flex-direction: column;
+  }
+
+  tbody {
+    height: 300px;
+    overflow: auto;
+  }
+
+  tr {
+    display: flex;
+    justify-content: center;
+  }
+
+  td, th {
+    padding: .5rem;
+    width: 25%;
+    display: flex;
+    justify-content: center;
+  }
 }
 
 .form-row-style {
@@ -32,9 +65,6 @@ h3:not(:first-of-type) {
 
 .bulk-edit-picker {
   display: flex;
-  justify-content: flex-end;
-}
-
-.bulk-edit-hidden-piker {
-  display: none;
+  justify-content: space-between;
+  align-items: center;
 }
