@@ -1,4 +1,4 @@
-import { Component, ViewChild, Output, EventEmitter, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewChild, Output, EventEmitter, Input, ChangeDetectionStrategy, AfterViewInit, OnChanges } from '@angular/core';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,7 +18,7 @@ import { PageData } from '../shared/models/page-data.model';
   styleUrl: './employees-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EmployeesTableComponent {
+export class EmployeesTableComponent implements AfterViewInit, OnChanges {
   @Input() employees!:EmployeeSum[];
   @Output() pageChange = new EventEmitter<PageData>();
   @Output() bulkEdit = new EventEmitter<{employees: EmployeeSum[], pageData: PageData}>();

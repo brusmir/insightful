@@ -34,6 +34,10 @@ table {
     overflow: auto;
   }
 
+  thead {
+    width: calc(100% - 15px);
+  }
+
   tr {
     display: flex;
     justify-content: center;

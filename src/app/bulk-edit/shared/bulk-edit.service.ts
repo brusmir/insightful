@@ -2,10 +2,11 @@ import { Injectable, inject } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Employee } from '../../shared/models/employee.model';
 import { ShiftsService } from '../../shared/services/shifts.service';
-import { EMPTY, Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, of } from 'rxjs';
 import dayjs from 'dayjs';
 import { Shift } from '../../shared/models/shift.model';
 import { EmployeesService } from '../../shared/services/employees.service';
+import { EmployeeForm } from '../../shared/models/employee-form.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,8 +19,8 @@ export class BulkEditService {
   employeesToSave: Employee[] = [];
   shiftsToSave: Shift[] = [];
 
-  createFormGroup(data: Employee[]): void {
-    this.employeeForm = this.fb.group({
+  createForm(data: Employee[]): Observable<FormGroup> {
+    const employeeForm = this.fb.group({
       employees: this.fb.array([])
     });
 
@@ -54,11 +55,15 @@ export class BulkEditService {
       requests.push(request);
     });
 
-    forkJoin(requests).subscribe((employees: any[]) => {
-      employees.forEach(employee => {
-        (this.employeeForm.get('employees') as FormArray).push(employee);
-      });
-    });
+    return forkJoin(requests).pipe(
+      map((employees: EmployeeForm[]) => {
+        employees.forEach(employee => {
+          (employeeForm.get('employees') as FormArray).push(employee);
+        });
+        this.employeeForm = employeeForm;
+        return employeeForm;
+      })
+    );
   }
 
   calculateSumColumn(employeeId: number, shiftId: number): void {
@@ -86,14 +91,14 @@ export class BulkEditService {
   }
 
   get employees() {
-    return this.employeeForm.get('employees') as FormArray;
+    return this.employeeForm?.get('employees') as FormArray;
   }
 
   findChangedControls(control: AbstractControl) {
     if (control instanceof FormGroup) {
       Object.keys(control.controls).forEach(key => {
         const nestedControl = control.get(key);
-        if (nestedControl) {
+        if (nestedControl && key !== 'selectedDate') {
           this.findChangedControls(nestedControl);
         }
       });
@@ -150,7 +155,7 @@ export class BulkEditService {
     return {...item};
   }
 
-  saveEmployeesAndShifts(): Observable<any> {
+  saveEmployeesAndShifts(): Observable<any[]> {
     this.findChangedControls(this.employeeForm);
 
     const saveRequests = [];
@@ -161,6 +166,8 @@ export class BulkEditService {
         const request = this.employeesService.saveEmployee(employee);
         saveRequests.push(request);
       }
+
+      this.employeesToSave = [];
     }
 
     if (this.shiftsToSave.length) {
@@ -169,13 +176,15 @@ export class BulkEditService {
         const request = this.shiftsService.saveShift(shift);
         saveRequests.push(request);
       }
+
+      this.shiftsToSave = [];
     }
 
     if (saveRequests.length) {
       // Wait for all requests to complete
       return forkJoin(saveRequests);
     } else {
-      return EMPTY;
+      return of([]);
     }
   }
 }

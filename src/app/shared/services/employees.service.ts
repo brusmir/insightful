@@ -76,7 +76,7 @@ export class EmployeesService {
         }
       }
     }, 0);
-    for(let [key, value] of shiftsPerDay) {
+    for(const [key, value] of shiftsPerDay) {
       totalClockedInTime += value.regularHours;
       totalRegularHours += value.regularHours <= 8 ? value.regularHours : 8;
       totalOvertime += value.regularHours - 8;

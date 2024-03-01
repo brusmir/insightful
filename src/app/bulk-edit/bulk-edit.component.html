@@ -1,84 +1,86 @@
 <h2 mat-dialog-title>Bulk Edit</h2>
 <mat-dialog-content>
-  <form [formGroup]="employeeForm">
-    <div formArrayName="employees">
-      @for(employee of employees.value; track trackByFn; let idx = $index){
-        <h3>{{idx + 1}} Employee</h3>
-        <div [formGroupName]="idx">
-            <div class="form-row-style">
-              <div class="form-column-style">
-                <mat-form-field appearance="outline">
-                  <mat-label>Employee name:</mat-label>
-                  <input matInput formControlName="name">
-                </mat-form-field>
+  @if(employeeForm$ | async; as form) {
+    <form [formGroup]="form">
+      <div formArrayName="employees">
+        @for(employee of employees.value; track trackByFn; let idx = $index){
+          <h3>{{idx + 1}} Employee</h3>
+          <div [formGroupName]="idx">
+              <div class="form-row-style">
+                <div class="form-column-style">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Employee name:</mat-label>
+                    <input matInput formControlName="name">
+                  </mat-form-field>
+                </div>
+                <div class="form-column-style">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Employee hourly rate:</mat-label>
+                    <input matInput formControlName="hourlyRate" type="number">
+                  </mat-form-field>
+                </div>
               </div>
-              <div class="form-column-style">
-                <mat-form-field appearance="outline">
-                  <mat-label>Employee hourly rate:</mat-label>
-                  <input matInput formControlName="hourlyRate" type="number">
-                </mat-form-field>
+              <div class="form-row-style">
+                <div class="form-column-style">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Employee overtime hourly rate:</mat-label>
+                    <input matInput formControlName="hourlyRateOvertime" type="number">
+                  </mat-form-field>
+                </div>
               </div>
-            </div>
-            <div class="form-row-style">
-              <div class="form-column-style">
-                <mat-form-field appearance="outline">
-                  <mat-label>Employee overtime hourly rate:</mat-label>
-                  <input matInput formControlName="hourlyRateOvertime" type="number">
-                </mat-form-field>
-              </div>
-            </div>
-        </div>
-
-        <h3>Shifts</h3>
-
-        <section>
-          <div class="bulk-edit-picker" [formGroupName]="idx">
-            @if(employee.selectedDate) {
-              <div>{{employee.selectedDate | date: 'M-d-yyyy'}}</div>
-            } @else {
-              <div>Today</div>
-            }
-
-            <mat-form-field>
-              <mat-label>Choose a date</mat-label>
-              <input matInput [matDatepicker]="picker" formControlName="selectedDate">
-              <mat-hint>MM/DD/YYYY</mat-hint>
-              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-              <mat-datepicker #picker></mat-datepicker>
-            </mat-form-field>
           </div>
-        </section>
 
-        <table [formGroupName]="idx" class="bulk-edit-container mat-elevation-z8">
-          <thead>
-              <tr>
-                  <th>Shift</th>
-                  <th>Clock in time</th>
-                  <th>Clock out time</th>
-                  <th>Total time</th>
+          <h3>Shifts</h3>
+
+          <section>
+            <div class="bulk-edit-picker" [formGroupName]="idx">
+              @if(employee.selectedDate) {
+                <div>{{employee.selectedDate | date: 'M-d-yyyy'}}</div>
+              } @else {
+                <div>Today</div>
+              }
+
+              <mat-form-field>
+                <mat-label>Choose a date</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="selectedDate">
+                <mat-hint>MM/DD/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </section>
+
+          <table [formGroupName]="idx" class="bulk-edit-container mat-elevation-z8">
+            <thead>
+                <tr>
+                    <th>Shift</th>
+                    <th>Clock in time</th>
+                    <th>Clock out time</th>
+                    <th>Total time</th>
+                </tr>
+            </thead>
+            <tbody formArrayName="shifts">
+              @for(employee of employee.shifts | filterByDate: employee.selectedDate; track trackByFn; let j = $index){
+                <tr [formGroupName]="j">
+                  <td>Shift</td>
+                  <td>
+                    <input type="time" formControlName="formattedClockIn" (change)="calculateSumColumn(idx, j)">
+                  </td>
+                  <td>
+                    <input type="time" formControlName="formattedClockOut" (change)="calculateSumColumn(idx, j)">
+                  </td>
+                  <td>
+                    <input type="time" formControlName="sum">
+                  </td>
               </tr>
-          </thead>
-          <tbody formArrayName="shifts">
-            @for(employee of employee.shifts | filterByDate: employee.selectedDate; track trackByFn; let j = $index){
-              <tr [formGroupName]="j">
-                <td>Shift</td>
-                <td>
-                  <input type="time" formControlName="formattedClockIn" (change)="calculateSumColumn(idx, j)">
-                </td>
-                <td>
-                  <input type="time" formControlName="formattedClockOut" (change)="calculateSumColumn(idx, j)">
-                </td>
-                <td>
-                  <input type="time" formControlName="sum">
-                </td>
-            </tr>
-            }
-          </tbody>
-        </table>
-        <mat-divider></mat-divider>
-      }
-    </div>
-  </form>
+              }
+            </tbody>
+          </table>
+          <mat-divider></mat-divider>
+        }
+      </div>
+    </form>
+  }
   @if (showSpinner) {
     <div class="bulk-edit-loading-shade">
       <mat-spinner></mat-spinner>
@@ -86,6 +88,6 @@
   }
 </mat-dialog-content>
 <mat-dialog-actions class="actions-buttons">
-  <button mat-raised-button (click)="onFormSubmit()" type="submit" [disabled]="!employeeForm.valid">Save</button>
+  <button mat-raised-button (click)="onFormSubmit()" type="submit" [disabled]="!employeeForm?.valid">Save</button>
   <button mat-raised-button mat-dialog-close>Cancel</button>
 </mat-dialog-actions>

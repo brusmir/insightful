@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { Observable, tap } from 'rxjs';
+import { ChangeDetectionStrategy, Component, DestroyRef, Inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -16,10 +17,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { BulkEditService } from './shared/bulk-edit.service';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe } from '@angular/common';
 import { FilterByDatePipe } from '../shared/filter-by-date.pipe';
 import { Employee } from './../shared/models/employee.model';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-bulk-edit',
@@ -37,27 +39,35 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatDatepickerModule,
     DatePipe,
     FilterByDatePipe,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    AsyncPipe
   ],
   providers: [provideNativeDateAdapter()],
   templateUrl: './bulk-edit.component.html',
-  styleUrl: './bulk-edit.component.scss'
+  styleUrl: './bulk-edit.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BulkEditComponent {
+export class BulkEditComponent implements OnInit {
   employeeForm!: FormGroup;
+  employeeForm$!: Observable<FormGroup>;
   employees!: FormArray;
   showSpinner = false;
 
   constructor(
     public dialogRef: MatDialogRef<BulkEditComponent>,
     @Inject(MAT_DIALOG_DATA) public data: {employees: Employee[]},
-    private bulkEditService: BulkEditService
+    private bulkEditService: BulkEditService,
+    private readonly destroyRef: DestroyRef
   ) {}
 
   ngOnInit() {
-    this.bulkEditService.createFormGroup(this.data.employees);
-    this.employeeForm = this.bulkEditService.employeeForm;
-    this.employees = this.bulkEditService.employees;
+    this.employeeForm$ = this.bulkEditService.createForm(this.data.employees).pipe(
+      tap(form => {
+        this.employeeForm = form;
+        this.employees = this.bulkEditService.employees;
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    );
   }
 
   calculateSumColumn(employeeId: number, shiftId: number): void {

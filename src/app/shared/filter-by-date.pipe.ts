@@ -1,5 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import dayjs from 'dayjs';
+import { ShiftForm } from './models/shift-form.model';
 
 @Pipe({
   name: 'filterByDate',
@@ -7,7 +8,7 @@ import dayjs from 'dayjs';
 })
 export class FilterByDatePipe implements PipeTransform {
 
-  transform(array: any[], filterDate: Date): any[] {
+  transform(array: ShiftForm[], filterDate: Date): ShiftForm[] {
     if (!array || !filterDate) {
       return array;
     }
