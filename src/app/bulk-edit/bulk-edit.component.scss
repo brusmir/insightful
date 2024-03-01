@@ -36,11 +36,13 @@ table {
 
   thead {
     width: calc(100% - 15px);
+    background-color: gainsboro;
   }
 
   tr {
     display: flex;
     justify-content: center;
+    border-bottom: 1px solid lightgray;
   }
 
   td, th {

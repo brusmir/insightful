@@ -67,6 +67,7 @@ export class EmployeesTableComponent implements AfterViewInit, OnChanges {
   onPageChange(event: PageEvent) {
     this.isLoadingEmployees = true;
     this.pageChange.emit({page: event.pageIndex + 1, limit: event.pageSize});
+    this.selection.clear();
   }
 
   onEditBulk() {

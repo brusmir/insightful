@@ -36,7 +36,7 @@ export class BulkEditService {
               clockOut: [shift.clockOut, Validators.required],
               formattedClockIn: [dayjs(shift.clockIn).format('HH:mm'), Validators.required],
               formattedClockOut: [dayjs(shift.clockOut).format('HH:mm'), Validators.required],
-              sum: [{value: dayjs(shift.clockOut - shift.clockIn).format('HH:mm'), disabled: true},Validators.required],
+              sum: [{value: dayjs(shift.clockOut - shift.clockIn).format('HH:mm'), disabled: true}, Validators.required],
               id: [shift.id],
               employeeId: [employee.id]
             }));

@@ -73,6 +73,8 @@
     [length]="10000"
     [pageSize]="5"
     (page)="onPageChange($event)"
-    aria-label="Select employees">
+    aria-label="Select employees"
+    [disabled]="!dataSource.data.length"
+  >
   </mat-paginator>
 </div>

@@ -1,24 +1,26 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, EMPTY, Observable, catchError, concatMap, forkJoin, map, switchMap } from 'rxjs';
+import { BehaviorSubject, catchError, forkJoin, map, switchMap } from 'rxjs';
 import { Employee } from '../models/employee.model';
 import { Shift } from '../models/shift.model';
 import dayjs from 'dayjs';
 import { ShiftsService } from './shifts.service';
 import { PageData } from '../models/page-data.model';
+import { ErrorHandlerService } from '../../core/error-handler.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EmployeesService {
   #http = inject(HttpClient);
-  #employeesUrl = 'http://localhost:3000/employees'
   #shiftService = inject(ShiftsService);
+  #errorHandlerService = inject(ErrorHandlerService);
+  #employeesUrl = 'http://localhost:3000/employees'
 
   #pageSubject = new BehaviorSubject<PageData>({page: 0, limit: 5});
   pageAction$ = this.#pageSubject.asObservable();
   employees$ = this.pageAction$.pipe(
-    concatMap(({page, limit}) => this.#http.get<Employee[]>(`${this.#employeesUrl}?_page=${page}&_limit=${limit}`).pipe(
+    switchMap(({page, limit}) => this.#http.get<Employee[]>(`${this.#employeesUrl}?_page=${page}&_limit=${limit}`).pipe(
       switchMap(employees => {
         const employeeObservables = employees.map(employee =>
           this.#shiftService.getShiftsById(employee.id).pipe(
@@ -36,11 +38,17 @@ export class EmployeesService {
         return forkJoin(employeeObservables);
       })
     )),
-    catchError(err => this.#handleError(err))
+    catchError(err => this.#errorHandlerService.handleError(err))
   );
 
   setPageSize(page: PageData) {
     this.#pageSubject.next(page);
+  }
+
+  saveEmployee(employee: Employee) {
+    return this.#http.patch(`${this.#employeesUrl}/${employee.id}`, employee).pipe(
+      catchError(err => this.#errorHandlerService.handleError(err))
+    );
   }
 
   calculateTotalHours(shifts: Shift[]): { totalClockedInTime: number, totalRegularHours: number, totalOvertime: number } {
@@ -82,27 +90,5 @@ export class EmployeesService {
       totalOvertime += value.regularHours - 8;
     }
     return { totalClockedInTime, totalRegularHours, totalOvertime };
-  }
-
-  saveEmployee(employee: Employee) {
-    return this.#http.patch(`${this.#employeesUrl}/${employee.id}`, employee);
-  }
-
-  #handleError(err: HttpErrorResponse): Observable<never> {
-    // in a real world app, we may send the server to some remote logging infrastructure
-    // instead of just logging it to the console
-    let errorMessage = '';
-    if (err.error instanceof ErrorEvent) {
-      // A client-side or network error occurred. Handle it accordingly.
-      errorMessage = `An error occurred: ${err.error.message}`;
-    } else {
-      // The backend returned an unsuccessful response code.
-      // The response body may contain clues as to what went wrong,
-      errorMessage = `Server returned code: ${err.status}, error message is: ${err.message
-        }`;
-    }
-    console.error(errorMessage);
-
-    return EMPTY;
   }
 }

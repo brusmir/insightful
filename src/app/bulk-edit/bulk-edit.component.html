@@ -3,7 +3,7 @@
   @if(employeeForm$ | async; as form) {
     <form [formGroup]="form">
       <div formArrayName="employees">
-        @for(employee of employees.value; track trackByFn; let idx = $index){
+        @for(employee of employees.value; track trackByFn; let idx = $index; let last = $last){
           <h3>{{idx + 1}} Employee</h3>
           <div [formGroupName]="idx">
               <div class="form-row-style">
@@ -76,10 +76,16 @@
               }
             </tbody>
           </table>
-          <mat-divider></mat-divider>
+          @if(!last) {
+            <mat-divider></mat-divider>
+          }
         }
       </div>
     </form>
+  } @else {
+    <div class="bulk-edit-loading-shade">
+      <mat-spinner></mat-spinner>
+    </div>
   }
   @if (showSpinner) {
     <div class="bulk-edit-loading-shade">
