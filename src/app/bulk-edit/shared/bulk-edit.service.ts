@@ -7,6 +7,8 @@ import dayjs from 'dayjs';
 import { Shift } from '../../shared/models/shift.model';
 import { EmployeesService } from '../../shared/services/employees.service';
 import { EmployeeForm } from '../../shared/models/employee-form.model';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc);
 
 @Injectable({
   providedIn: 'root'
@@ -36,7 +38,7 @@ export class BulkEditService {
               clockOut: [shift.clockOut, Validators.required],
               formattedClockIn: [dayjs(shift.clockIn).format('HH:mm'), Validators.required],
               formattedClockOut: [dayjs(shift.clockOut).format('HH:mm'), Validators.required],
-              sum: [{value: dayjs(shift.clockOut - shift.clockIn).format('HH:mm'), disabled: true}, Validators.required],
+              sum: [{value: dayjs.utc(dayjs(shift.clockOut, 'HH:mm').diff(dayjs(shift.clockIn, 'HH:mm'))).format('HH:mm'), disabled: true}, Validators.required],
               id: [shift.id],
               employeeId: [employee.id]
             }));
@@ -71,8 +73,8 @@ export class BulkEditService {
     const shift = shifts.at(shiftId);
 
     // Splitting the clockIn and clockOut time strings to get hours and minutes
-    const [clockInHours, clockInMinutes] = shift.get('formattedClockIn')?.value.split(':').map(Number);
-    const [clockOutHours, clockOutMinutes] = shift.get('formattedClockOut')?.value.split(':').map(Number);
+    const [clockInHours, clockInMinutes] = shift.get('formattedClockIn')?.value.split(':').map(Number) ?? undefined;
+    const [clockOutHours, clockOutMinutes] = shift.get('formattedClockOut')?.value.split(':').map(Number) ?? undefined;
 
     // Creating Day.js objects for clockIn and clockOut times
     const clockInTime = dayjs().hour(clockInHours).minute(clockInMinutes);
@@ -84,8 +86,12 @@ export class BulkEditService {
     // Calculating the hours and minutes for the difference
     const hours = Math.floor(differenceInMinutes / 60);
     const minutes = differenceInMinutes % 60;
+
     // Formatting the result into "HH:mm" format
-    const sum = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    const positiveHours = Math.abs(hours);
+    const positiveMinutes = Math.abs(minutes);
+
+    const sum = `${String(positiveHours).padStart(2, '0')}:${String(positiveMinutes).padStart(2, '0')}`;
 
     shift.patchValue({sum})
   }
@@ -146,11 +152,11 @@ export class BulkEditService {
   }
 
   updateShift(item: any) {
-    const [clockInHours, clockInMinutes] = item.formattedClockIn?.split(':').map(Number);
-    const [clockOutHours, clockOutMinutes] = item.formattedClockOut?.split(':').map(Number);
+    const [clockInHours, clockInMinutes] = item.formattedClockIn?.split(':').map(Number) ?? undefined;
+    const [clockOutHours, clockOutMinutes] = item.formattedClockOut?.split(':').map(Number) ?? undefined;
 
-    item.clockIn = dayjs(item.clockIn).hour(clockInHours).minute(clockInMinutes).valueOf();
-    item.clockOut = dayjs(item.clockOut).hour(clockOutHours).minute(clockOutMinutes).valueOf();
+    item.clockIn = dayjs(item.clockIn).hour(clockInHours).minute(clockInMinutes).second(0).millisecond(0).valueOf();
+    item.clockOut = dayjs(item.clockOut).hour(clockOutHours).minute(clockOutMinutes).second(0).millisecond(0).valueOf();
 
     return {...item};
   }
