@@ -1,4 +1,4 @@
-import { Component, ViewChild, Output, EventEmitter, Input } from '@angular/core';
+import { Component, ViewChild, Output, EventEmitter, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -8,18 +8,20 @@ import { SelectionModel } from '@angular/cdk/collections';
 import { MatButtonModule } from '@angular/material/button';
 import { EmployeeSum } from '../shared/models/employee-sum.model';
 import { CurrencyPipe } from '@angular/common';
+import { PageData } from '../shared/models/page-data.model';
 
 @Component({
   selector: 'app-employees-table',
   standalone: true,
   imports: [MatTableModule, MatPaginatorModule, MatProgressSpinnerModule, MatSortModule, MatCheckboxModule, MatButtonModule, CurrencyPipe],
   templateUrl: './employees-table.component.html',
-  styleUrl: './employees-table.component.scss'
+  styleUrl: './employees-table.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmployeesTableComponent {
   @Input() employees!:EmployeeSum[];
-  @Output() pageChange = new EventEmitter<PageEvent>();
-  @Output() bulkEdit = new EventEmitter<EmployeeSum[]>();
+  @Output() pageChange = new EventEmitter<PageData>();
+  @Output() bulkEdit = new EventEmitter<{employees: EmployeeSum[], pageData: PageData}>();
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -27,7 +29,6 @@ export class EmployeesTableComponent {
   dataSource!: MatTableDataSource<EmployeeSum>;
   selection = new SelectionModel<EmployeeSum>(true, []);
   isLoadingEmployees = false;
-  length = 10000;
 
   ngAfterViewInit(): void {
     this.dataSource.sort = this.sort;
@@ -65,12 +66,13 @@ export class EmployeesTableComponent {
 
   onPageChange(event: PageEvent) {
     this.isLoadingEmployees = true;
-    this.pageChange.emit(event);
+    this.pageChange.emit({page: event.pageIndex + 1, limit: event.pageSize});
   }
 
   onEditBulk() {
-   this.bulkEdit.emit(this.selection.selected);
-   this.selection.clear();
+    const pageData = {page: this.paginator.pageIndex + 1, limit: this.paginator.pageSize};
+    this.bulkEdit.emit({employees: this.selection.selected, pageData});
+    this.selection.clear();
   }
 
   getTotalEmployees() {

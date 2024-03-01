@@ -63,10 +63,10 @@
               <tr [formGroupName]="j">
                 <td>Shift</td>
                 <td>
-                  <input type="time" formControlName="formattedClockIn" (change)="sum(idx, j)">
+                  <input type="time" formControlName="formattedClockIn" (change)="calculateSumColumn(idx, j)">
                 </td>
                 <td>
-                  <input type="time" formControlName="formattedClockOut" (change)="sum(idx, j)">
+                  <input type="time" formControlName="formattedClockOut" (change)="calculateSumColumn(idx, j)">
                 </td>
                 <td>
                   <input type="time" formControlName="sum">

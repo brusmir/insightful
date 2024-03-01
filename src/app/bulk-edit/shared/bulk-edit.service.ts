@@ -85,19 +85,6 @@ export class BulkEditService {
     shift.patchValue({sum})
   }
 
-  calculateTotalMinutes(timeString: string): number {
-    // Splitting the time string to get hours and minutes
-    const [hours, minutes] = timeString.split(':').map(Number);
-
-    // Creating a Day.js object with the given time
-    const timeObject = dayjs().hour(hours).minute(minutes);
-
-    // Calculating the total minutes
-    const totalMinutes = hours * 60 + minutes;
-
-    return totalMinutes;
-  }
-
   get employees() {
     return this.employeeForm.get('employees') as FormArray;
   }
@@ -116,7 +103,7 @@ export class BulkEditService {
       });
     } else if (control.dirty) {
       const parent = this.findParent(control, this.employeeForm);
-      if (parent) {
+      if (parent && parent.value) {
         this.sortItemForSave(parent.value);
       }
     }
@@ -146,29 +133,28 @@ export class BulkEditService {
       delete item.selectedDate;
       this.employeesToSave.push(item);
     } else {
-      this.shiftsToSave.push(this.updateShift(item));
+      const shift = this.updateShift(item);
+      delete shift.formattedClockIn;
+      delete shift.formattedClockOut;
+      this.shiftsToSave.push(shift);
     }
   }
 
   updateShift(item: any) {
-    console.log(item);
-    const [clockInHours, clockInMinutes] = item.formattedClockIn.split(':').map(Number);
-    const [clockOutHours, clockOutMinutes] = item.formattedClockOut.split(':').map(Number);
+    const [clockInHours, clockInMinutes] = item.formattedClockIn?.split(':').map(Number);
+    const [clockOutHours, clockOutMinutes] = item.formattedClockOut?.split(':').map(Number);
 
-    dayjs(item.clockIn).hour(clockInHours).minute(clockInMinutes);
-    dayjs(item.clockOut).hour(clockOutHours).minute(clockOutMinutes);
+    item.clockIn = dayjs(item.clockIn).hour(clockInHours).minute(clockInMinutes).valueOf();
+    item.clockOut = dayjs(item.clockOut).hour(clockOutHours).minute(clockOutMinutes).valueOf();
 
-    delete item.formattedClockIn;
-    delete item.formattedClockOut;
-
-    return item;
+    return {...item};
   }
 
   saveEmployeesAndShifts(): Observable<any> {
     this.findChangedControls(this.employeeForm);
 
     const saveRequests = [];
-    console.log(this.shiftsToSave);
+
     if (this.employeesToSave.length) {
       // Save employees
       for (const employee of this.employeesToSave) {

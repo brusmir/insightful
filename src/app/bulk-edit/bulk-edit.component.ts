@@ -58,14 +58,15 @@ export class BulkEditComponent {
     this.bulkEditService.createFormGroup(this.data.employees);
     this.employeeForm = this.bulkEditService.employeeForm;
     this.employees = this.bulkEditService.employees;
-    console.log(this.bulkEditService.employeeForm);
   }
 
-  sum(employeeId: number, shiftId: number) {
-    this.bulkEditService.calculateSumColumn(employeeId, shiftId);
+  calculateSumColumn(employeeId: number, shiftId: number): void {
+    if ((employeeId || employeeId === 0) && (shiftId || shiftId === 0)) {
+      this.bulkEditService.calculateSumColumn(employeeId, shiftId);
+    }
   }
 
-  trackByFn(index: number) {
+  trackByFn(index: number): number {
     return index;
   }
 
@@ -74,9 +75,10 @@ export class BulkEditComponent {
       this.showSpinner = true;
       this.bulkEditService.saveEmployeesAndShifts().subscribe(() => {
         this.showSpinner = false;
-        this.dialogRef.close();
+        this.dialogRef.close(true);
       })
+    } else {
+      this.dialogRef.close();
     }
-    this.dialogRef.close();
   }
 }

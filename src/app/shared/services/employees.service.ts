@@ -2,7 +2,6 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, EMPTY, Observable, catchError, concatMap, forkJoin, map, switchMap } from 'rxjs';
 import { Employee } from '../models/employee.model';
-import { PageEvent } from '@angular/material/paginator';
 import { Shift } from '../models/shift.model';
 import dayjs from 'dayjs';
 import { ShiftsService } from './shifts.service';
@@ -40,8 +39,8 @@ export class EmployeesService {
     catchError(err => this.#handleError(err))
   );
 
-  setPageSize(page: PageEvent) {
-    this.#pageSubject.next({page: page.pageIndex, limit: page.pageSize});
+  setPageSize(page: PageData) {
+    this.#pageSubject.next(page);
   }
 
   calculateTotalHours(shifts: Shift[]): { totalClockedInTime: number, totalRegularHours: number, totalOvertime: number } {

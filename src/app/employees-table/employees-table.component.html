@@ -63,16 +63,16 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="selection.toggle(row)"></tr>
       <tr mat-footer-row *matFooterRowDef="displayedColumns; sticky: true"></tr>
     </table>
+    @if (isLoadingEmployees) {
+      <div class="employees-table-loading-shade">
+        <mat-spinner></mat-spinner>
+      </div>
+    }
   </div>
   <mat-paginator
-    [length]="length"
+    [length]="10000"
     [pageSize]="5"
     (page)="onPageChange($event)"
     aria-label="Select employees">
   </mat-paginator>
 </div>
-@if (isLoadingEmployees) {
-  <div class="employees-table-loading-shade">
-    <mat-spinner></mat-spinner>
-  </div>
-}

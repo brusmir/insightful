@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { EmployeesTableComponent } from '../employees-table/employees-table.component';
 import { EmployeesService } from '../shared/services/employees.service';
-import { PageEvent } from '@angular/material/paginator';
 import {
   MatDialog
 } from '@angular/material/dialog';
 import { BulkEditComponent } from '../bulk-edit/bulk-edit.component';
 import { AsyncPipe } from '@angular/common';
 import { EmployeeSum } from '../shared/models/employee-sum.model';
+import { PageData } from '../shared/models/page-data.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -23,11 +23,11 @@ export class DashboardComponent {
   dialog = inject(MatDialog);
   employees$ = this.employeesService.employees$;
 
-  onPageChange(event: PageEvent) {
+  onPageChange(event: PageData) {
     this.employeesService.setPageSize(event);
   }
 
-  onBulkEdit(employees: EmployeeSum[]) {
+  onBulkEdit({employees, pageData}: {employees: EmployeeSum[], pageData: PageData}) {
     const dialogRef = this.dialog.open(BulkEditComponent, {
       data: {employees},
       width: '80%',
@@ -35,7 +35,9 @@ export class DashboardComponent {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
+      if (result) {
+        this.onPageChange(pageData);
+      }
     });
   }
 }

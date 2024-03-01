@@ -14,7 +14,6 @@ export class ShiftsService {
   }
 
   saveShift(shift: Shift) {
-    console.log('shift for save', shift);
     return this.#http.patch(`${this.#shiftsUrl}/${shift.id}`, shift)
   }
 }
